@@ -101,7 +101,7 @@ country_map = {
 
 # ----------------- Streamlit UI ------------------
 
-st.title("💼 Salary Prediction App")
+st.title("💼 Global Salary Prediction App")
 
 # Inputs
 gender = st.selectbox("Gender", ['Male', 'Female', 'Other'])
