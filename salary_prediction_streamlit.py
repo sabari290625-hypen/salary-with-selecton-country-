@@ -132,14 +132,13 @@ input_df = pd.DataFrame([input_data])
 predicted_salary_usd = model.predict(input_df)[0]
 converted_salary = predicted_salary_usd * conversion_rate
 
-# Output: Selected country + INR
-st.subheader("📈 Predicted Salary:")
-st.success(f"{currency_symbol} {converted_salary:,.2f} ({country_display})")
-st.caption(f"💵 Base Salary in USD: ${predicted_salary_usd:,.2f}")
-
 # INR conversion
 usd_to_inr = 83.5
 salary_in_inr = predicted_salary_usd * usd_to_inr
+
+# Output: Selected country + INR
+st.subheader("📈 Predicted Salary:")
+st.success(f"{currency_symbol} {converted_salary:,.2f} ({country_display})")
 st.markdown(f"💰 Equivalent Salary in 🇮🇳 INR: ₹ {salary_in_inr:,.2f}")
 
 # Feature Importance
@@ -148,4 +147,3 @@ if st.checkbox("Show Feature Importances"):
     importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
     importance_df = importance_df.sort_values(by='Importance', ascending=False)
     st.bar_chart(importance_df.set_index('Feature'))
-
