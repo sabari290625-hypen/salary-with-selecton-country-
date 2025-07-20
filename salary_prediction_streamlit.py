@@ -43,7 +43,7 @@ model.fit(x_train, y_train)
 # 🌍 Country Map with Flags, Symbols, Rates
 country_map = {
     "🇺🇸 USA": ("USD", "$", 1.00),
-    "🇮🇳 India": ("INR", "₹", 83.5),
+    "🇮🇳 India": ("INR", "₹", 86),
     "🇬🇧 UK": ("GBP", "£", 0.78),
     "🇩🇪 Germany": ("EUR", "€", 0.92),
     "🇫🇷 France": ("EUR", "€", 0.92),
@@ -132,10 +132,15 @@ input_df = pd.DataFrame([input_data])
 predicted_salary_usd = model.predict(input_df)[0]
 converted_salary = predicted_salary_usd * conversion_rate
 
-# Output
+# Output: Selected country + INR
 st.subheader("📈 Predicted Salary:")
 st.success(f"{currency_symbol} {converted_salary:,.2f} ({country_display})")
 st.caption(f"💵 Base Salary in USD: ${predicted_salary_usd:,.2f}")
+
+# INR conversion
+usd_to_inr = 83.5
+salary_in_inr = predicted_salary_usd * usd_to_inr
+st.markdown(f"💰 Equivalent Salary in 🇮🇳 INR: ₹ {salary_in_inr:,.2f}")
 
 # Feature Importance
 if st.checkbox("Show Feature Importances"):
@@ -143,3 +148,4 @@ if st.checkbox("Show Feature Importances"):
     importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
     importance_df = importance_df.sort_values(by='Importance', ascending=False)
     st.bar_chart(importance_df.set_index('Feature'))
+
