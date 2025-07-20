@@ -15,8 +15,13 @@ df.dropna(inplace=True)
 df['Education Level'].replace(["Bachelor's Degree", "Master's Degree", "phD"], ["Bachelor's", "Master's", "PhD"], inplace=True)
 df['Education Level'] = df['Education Level'].map({"High School": 0, "Bachelor's": 1, "Master's": 2, "PhD": 3})
 
-# Drop unnecessary columns
-df = df.drop(columns=[col for col in ['Gender', 'Age'] if col in df.columns])
+# Gender and Age encoding (optional if not already in dataset)
+if 'Gender' not in df.columns:
+    df['Gender'] = np.random.choice(['Male', 'Female', 'Other'], size=len(df))
+if 'Age' not in df.columns:
+    df['Age'] = np.random.randint(22, 60, size=len(df))
+
+df['Gender'] = df['Gender'].map({'Male': 0, 'Female': 1, 'Other': 2})
 
 # Add missing columns
 if 'Location' not in df.columns:
@@ -31,7 +36,7 @@ df['Job Title'] = df['Job Title'].apply(lambda x: 'Others' if x in job_title_edi
 # One-hot encoding
 df = pd.get_dummies(df, columns=['Location', 'Industry', 'Job Title', 'Job Type'], drop_first=True)
 
-# Split data
+# Final split
 X = df.drop('Salary', axis=1)
 y = df['Salary']
 x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
@@ -98,24 +103,40 @@ country_map = {
 
 st.title("💼 Salary Prediction App")
 
-# User inputs
+# Inputs
+gender = st.selectbox("Gender", ['Male', 'Female', 'Other'])
+age = st.slider("Your Age", 22, 60, 25)
+experience_mode = st.radio("Experience Input Mode", ['Manual', 'Automatic'])
+
+if experience_mode == 'Manual':
+    experience = st.slider("Years of Experience", 0, 40, 3)
+    if experience > (age - 22):
+        st.error(f"🚫 Invalid input: At age {age}, maximum experience is {age - 22} years.")
+        st.stop()
+else:
+    experience = max(0, age - 22)
+    st.info(f"🧠 Experience automatically calculated as: {experience} years (Age - 22)")
+
 education = st.selectbox("Education Level", ['High School', "Bachelor's", "Master's", "PhD"])
-experience = st.slider("Years of Experience", 0, 40, 1)
 location = st.selectbox("Location", ['Urban', 'Rural', 'Suburban'])
 industry = st.selectbox("Industry", ['Tech', 'Finance', 'Healthcare', 'Education'])
 job_type = st.selectbox("Job Type", ['Remote', 'Hybrid', 'Onsite'])
 job_title = st.selectbox("Job Title", sorted([col.replace("Job Title_", "") for col in X.columns if "Job Title_" in col] + ['Others']))
-country_display = st.selectbox("🌍 Country You Want to Work In", list(country_map.keys()))
+
+formatted_options = [f"{k}\n💱 {v[0]} ({v[1]})" for k, v in country_map.items()]
+selected = st.selectbox("🌍 Country You Want to Work In", formatted_options)
+country_display = selected.split('\n')[0]
 currency_code, currency_symbol, conversion_rate = country_map[country_display]
 
-# Encode user inputs
-education_encoded = {"High School": 0, "Bachelor's": 1, "Master's": 2, "PhD": 3}[education]
+# Encode input
 input_data = {
-    'Education Level': education_encoded,
+    'Education Level': {"High School": 0, "Bachelor's": 1, "Master's": 2, "PhD": 3}[education],
     'Years of Experience': experience,
+    'Gender': {'Male': 0, 'Female': 1, 'Other': 2}[gender],
+    'Age': age
 }
 
-# One-hot encoding for user input
+# One-hot encoding
 for col in X.columns:
     if "Location_" in col:
         input_data[col] = 1 if col == f'Location_{location}' else 0
@@ -128,20 +149,17 @@ for col in X.columns:
 
 input_df = pd.DataFrame([input_data])
 
-# Prediction
+# Predict
 predicted_salary_usd = model.predict(input_df)[0]
 converted_salary = predicted_salary_usd * conversion_rate
+salary_in_inr = predicted_salary_usd * 86
 
-# INR conversion
-usd_to_inr = 83.5
-salary_in_inr = predicted_salary_usd * usd_to_inr
-
-# Output: Selected country + INR
+# Output
 st.subheader("📈 Predicted Salary:")
 st.success(f"{currency_symbol} {converted_salary:,.2f} ({country_display})")
 st.markdown(f"💰 Equivalent Salary in 🇮🇳 INR: ₹ {salary_in_inr:,.2f}")
 
-# Feature Importance
+# Feature importance
 if st.checkbox("Show Feature Importances"):
     importances = model.feature_importances_
     importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
